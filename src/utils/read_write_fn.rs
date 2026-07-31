@@ -1,4 +1,6 @@
-use std::{eprint, eprintln, fs, mem::replace, path::Path, println};
+use std::{ eprintln, fs , path::Path, println};
+use std::collections::HashMap;
+use serde_json::Value;
 
 const BASE_PATH: &str = r"./src/db_prop";
 
@@ -141,3 +143,126 @@ pub fn delete_line_from_db_table(db_table: &str, target_id: u64) {
     println!("Deleted row with id {}", target_id);
 }
 
+fn parse_schema(line: &str) -> Result<HashMap<String, String>, String> {
+    let inner = line.trim();
+    let inner = inner.strip_prefix('[').ok_or("Missing [")?;
+    let inner = inner.strip_suffix(']').ok_or("Missing ]")?;
+
+    let mut map = HashMap::new();
+    for part in inner.split(',') {
+        let part = part.trim();
+        if part.is_empty() { continue; }
+        let Some((name, ty)) = part.split_once("->") else {
+            return Err(format!("Bad schema part: '{}'", part));
+        };
+        map.insert(name.trim().to_string(), ty.trim().to_string());
+    }
+    Ok(map)
+}
+
+
+fn type_matches(value: &Value, expected: &str) -> bool {
+    match expected {
+        "string" => value.is_string(),
+        "int"    => value.is_u64() || value.is_i64(),
+        "float"  => value.is_f64(),
+        "bool"   => value.is_boolean(),
+        _ => {
+            eprintln!("Warning: unknown schema type '{}'", expected);
+            false
+        }
+    }
+}
+
+pub fn add_line_to_db_table(db_table: &str, data: HashMap<String, Value>) {
+    let path_str = db_table.replace('.', "/");
+    let path = format!("{}/{}.txt", BASE_PATH, path_str);
+
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Failed to read file: {}", e);
+            return;
+        }
+    };
+
+    let lines: Vec<&str> = content.lines().collect();
+    if lines.is_empty() {
+        eprintln!("Empty file — no schema");
+        return;
+    }
+
+
+    let schema = match parse_schema(lines[0]) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Schema parse error: {}", e);
+            return;
+        }
+    };
+
+ 
+    for key in data.keys() {
+        if !schema.contains_key(key) {
+            eprintln!("Validation failed: unknown column '{}'", key);
+            return;
+        }
+    }
+
+  
+    for (col_name, col_type) in &schema {
+        let Some(value) = data.get(col_name) else {
+            eprintln!("Validation failed: missing column '{}'", col_name);
+            return;
+        };
+        if !type_matches(value, col_type) {
+            eprintln!(
+                "Validation failed: '{}' expected '{}', got {:?}",
+                col_name, col_type, value
+            );
+            return;
+        }
+    }
+
+
+    let mut max_id = 0u64;
+    for line in &lines[1..] {
+        if line.trim().is_empty() { continue; }
+        if let Ok(json) = serde_json::from_str::<Value>(line) {
+            if let Some(id) = json.get("id").and_then(|v| v.as_u64()) {
+                if id > max_id { max_id = id; }
+            }
+        }
+    }
+    let new_id = max_id + 1;
+
+   
+    let mut row = serde_json::Map::new();
+    row.insert("id".to_string(), Value::Number(new_id.into()));
+    for (k, v) in data {
+        row.insert(k, v);
+    }
+
+    let new_line = match serde_json::to_string(&Value::Object(row)) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Serialize error: {}", e);
+            return;
+        }
+    };
+
+
+    let mut new_content = content;
+    if !new_content.ends_with('\n') {
+        new_content.push('\n');
+    }
+    new_content.push_str(&new_line);
+    new_content.push('\n');
+
+    if let Err(e) = fs::write(&path, new_content) {
+        eprintln!("Failed to write: {}", e);
+        return;
+    }
+
+    println!("Added row id {} to {}", new_id, db_table);
+}
