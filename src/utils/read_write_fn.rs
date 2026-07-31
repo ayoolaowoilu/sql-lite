@@ -282,7 +282,7 @@ pub fn update_db_table(props: UpdateProp) {
     let path_str = props.db_table.replace('.', "/");
     let path = format!("{}/{}.txt", BASE_PATH, path_str);
 
-    // READ
+    
     let content = match fs::read_to_string(&path) {
         Ok(c) => c,
         Err(e) => {
@@ -297,7 +297,7 @@ pub fn update_db_table(props: UpdateProp) {
         return;
     }
 
-    // PARSE SCHEMA
+    
     let schema = match parse_schema(lines[0]) {
         Ok(s) => s,
         Err(e) => {
@@ -306,7 +306,6 @@ pub fn update_db_table(props: UpdateProp) {
         }
     };
 
-    // VALIDATE: every column being updated must exist and match type
     for (col_name, value) in &props.updates {
         let Some(expected_type) = schema.get(col_name) else {
             eprintln!("Validation failed: unknown column '{}'", col_name);
@@ -321,7 +320,7 @@ pub fn update_db_table(props: UpdateProp) {
         }
     }
 
-    // PROCESS ROWS
+
     let mut kept_rows: Vec<String> = vec![lines[0].to_string()];
     let mut found = false;
 
@@ -343,11 +342,11 @@ pub fn update_db_table(props: UpdateProp) {
             }
         };
 
-        // Check if this is the row to update
+       
         let row_id = row.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
         if row_id == props.target_id {
             found = true;
-            // Apply updates
+          
             for (k, v) in &props.updates {
                 row.insert(k.clone(), v.clone());
             }
