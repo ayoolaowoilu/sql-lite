@@ -24,13 +24,12 @@ changes.insert("name".to_string(), Value::String("Alice makindddddd".to_string()
 changes.insert("id".to_string(), Value::Number(3.into()));
 
 let prop = UpdateProp {
-    db_table: "default.users".to_string(),
-    target_type: "id".to_string(),
-    target_value:Some(json!(1)),
-    updates: changes,
-    update_type:UpdateType::Value
+    db_table: "users".into(),
+    updates: HashMap::from([("name".into(), json!("Alice"))]),
+    update_type: UpdateType::Value,
+    target_column: "id".into(),
+    target_value: Some(json!(3)),  
 };
-
 update_db_table(prop);
 
 }
