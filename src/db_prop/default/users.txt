@@ -1,0 +1,4 @@
+[id -> number , name -> string , email -> string]
+{id : 1 , name : "owoilu Ayoola" , email: "strinnn"}
+{id : 1 , name : "owoilu Ayoola" , email: "strinnn"}
+{id : 1 , name : "owoilu Ayoola" , email: "strinnn"}

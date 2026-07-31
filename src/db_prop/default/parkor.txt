@@ -1,0 +1,2 @@
+[ key -> string ]
+{key:"122}
