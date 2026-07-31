@@ -4,6 +4,16 @@ use serde_json::Value;
 
 const BASE_PATH: &str = r"./src/db_prop";
 
+pub struct DeleteProp {
+   pub  db_table : String,
+     pub target_id : u64
+}
+pub struct UpdateProp {
+    pub db_table: String,
+    pub target_id: u64,
+    pub updates: HashMap<String, Value>, // columns to change
+}
+
 fn auth_db(name: &str) -> bool {
     let Ok(entries) = Path::new(BASE_PATH).read_dir() else {
         return false;
@@ -85,9 +95,9 @@ pub fn read_db(db: &str) {
     }
 }
 
-pub fn delete_line_from_db_table(db_table: &str, target_id: u64) {
+pub fn delete_line_from_db_table(props:DeleteProp) {
 
-    let formatted_string = db_table.replace(".", "/");
+    let formatted_string = props.db_table.replace(".", "/");
     let path = format!("{}/{}.txt", BASE_PATH, formatted_string);
     let path = Path::new(&path);
 
@@ -120,7 +130,7 @@ pub fn delete_line_from_db_table(db_table: &str, target_id: u64) {
 
   
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(line) {
-            if json.get("id") == Some(&serde_json::json!(target_id)) {
+            if json.get("id") == Some(&serde_json::json!(props.target_id)) {
                 found = true;
                 continue; 
             }
@@ -129,7 +139,7 @@ pub fn delete_line_from_db_table(db_table: &str, target_id: u64) {
     }
 
     if !found {
-        eprintln!("Row with id {} not found", target_id);
+        eprintln!("Row with id {} not found", props.target_id);
         return;
     }
 
@@ -140,7 +150,7 @@ pub fn delete_line_from_db_table(db_table: &str, target_id: u64) {
         return;
     }
 
-    println!("Deleted row with id {}", target_id);
+    println!("Deleted row with id {}", props.target_id);
 }
 
 fn parse_schema(line: &str) -> Result<HashMap<String, String>, String> {
@@ -265,4 +275,100 @@ pub fn add_line_to_db_table(db_table: &str, data: HashMap<String, Value>) {
     }
 
     println!("Added row id {} to {}", new_id, db_table);
+}
+
+
+pub fn update_db_table(props: UpdateProp) {
+    let path_str = props.db_table.replace('.', "/");
+    let path = format!("{}/{}.txt", BASE_PATH, path_str);
+
+    // READ
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Failed to read file: {}", e);
+            return;
+        }
+    };
+
+    let lines: Vec<&str> = content.lines().collect();
+    if lines.is_empty() {
+        eprintln!("Empty file");
+        return;
+    }
+
+    // PARSE SCHEMA
+    let schema = match parse_schema(lines[0]) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Schema parse error: {}", e);
+            return;
+        }
+    };
+
+    // VALIDATE: every column being updated must exist and match type
+    for (col_name, value) in &props.updates {
+        let Some(expected_type) = schema.get(col_name) else {
+            eprintln!("Validation failed: unknown column '{}'", col_name);
+            return;
+        };
+        if !type_matches(value, expected_type) {
+            eprintln!(
+                "Validation failed: '{}' expected '{}', got {:?}",
+                col_name, expected_type, value
+            );
+            return;
+        }
+    }
+
+    // PROCESS ROWS
+    let mut kept_rows: Vec<String> = vec![lines[0].to_string()];
+    let mut found = false;
+
+    for line in &lines[1..] {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let mut row: serde_json::Map<String, Value> = match serde_json::from_str(trimmed) {
+            Ok(Value::Object(map)) => map,
+            Ok(_) => {
+                kept_rows.push(trimmed.to_string());
+                continue;
+            }
+            Err(_) => {
+                kept_rows.push(trimmed.to_string());
+                continue;
+            }
+        };
+
+        // Check if this is the row to update
+        let row_id = row.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        if row_id == props.target_id {
+            found = true;
+            // Apply updates
+            for (k, v) in &props.updates {
+                row.insert(k.clone(), v.clone());
+            }
+            let updated_json = serde_json::to_string(&Value::Object(row)).unwrap();
+            kept_rows.push(updated_json);
+        } else {
+            kept_rows.push(trimmed.to_string());
+        }
+    }
+
+    if !found {
+        eprintln!("Row with id {} not found", props.target_id);
+        return;
+    }
+
+    // WRITE BACK
+    let new_content = kept_rows.join("\n") + "\n";
+    if let Err(e) = fs::write(&path, new_content) {
+        eprintln!("Failed to write file: {}", e);
+        return;
+    }
+
+    println!("Updated row id {} in {}", props.target_id, props.db_table);
 }
