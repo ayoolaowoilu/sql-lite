@@ -1,3 +1,6 @@
+
+use std::any::Any;
+use std::ptr::null;
 use std::{ eprintln, fs , path::Path, println};
 use std::collections::HashMap;
 use serde_json::Value;
@@ -8,10 +11,21 @@ pub struct DeleteProp {
    pub  db_table : String,
      pub target_id : u64
 }
+
+#[derive(PartialEq)]
+pub enum UpdateType {
+  
+    Value,
+     Type
+}
+
+
 pub struct UpdateProp {
     pub db_table: String,
-    pub target_id: u64,
-    pub updates: HashMap<String, Value>, // columns to change
+    pub updates: HashMap<String, Value>,
+    pub update_type : UpdateType,
+    pub target_type : String,
+    pub target_value : Option<Value>
 }
 
 fn auth_db(name: &str) -> bool {
@@ -305,7 +319,7 @@ pub fn update_db_table(props: UpdateProp) {
             return;
         }
     };
-
+  // type check
     for (col_name, value) in &props.updates {
         let Some(expected_type) = schema.get(col_name) else {
             eprintln!("Validation failed: unknown column '{}'", col_name);
@@ -320,7 +334,7 @@ pub fn update_db_table(props: UpdateProp) {
         }
     }
 
-
+  // row search
     let mut kept_rows: Vec<String> = vec![lines[0].to_string()];
     let mut found = false;
 
@@ -342,9 +356,9 @@ pub fn update_db_table(props: UpdateProp) {
             }
         };
 
-       
-        let row_id = row.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
-        if row_id == props.target_id {
+       if props.update_type == UpdateType::Value {
+              let row_id = row.get(&props.target_type);
+        if row_id == serde_json::to_string_pretty(&props.target_value).unwrap() {
             found = true;
           
             for (k, v) in &props.updates {
@@ -355,10 +369,12 @@ pub fn update_db_table(props: UpdateProp) {
         } else {
             kept_rows.push(trimmed.to_string());
         }
+       }
+      
     }
 
     if !found {
-        eprintln!("Row with id {} not found", props.target_id);
+        eprintln!("Row with id {} not found", props.target_value);
         return;
     }
 
@@ -369,5 +385,5 @@ pub fn update_db_table(props: UpdateProp) {
         return;
     }
 
-    println!("Updated row id {} in {}", props.target_id, props.db_table);
+    println!("Updated row id {} in {}", props.target_value, props.db_table);
 }

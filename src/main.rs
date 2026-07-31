@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
-use crate::utils::read_write_fn::{UpdateProp, add_line_to_db_table, read_db, update_db_table};
+use crate::utils::read_write_fn::{UpdateProp, UpdateType, add_line_to_db_table, read_db, update_db_table};
 
 
 mod utils;
@@ -25,8 +25,10 @@ changes.insert("id".to_string(), Value::Number(3.into()));
 
 let prop = UpdateProp {
     db_table: "default.users".to_string(),
-    target_id: 1,
+    target_type: "id".to_string(),
+    target_value:Some(json!(1)),
     updates: changes,
+    update_type:UpdateType::Value
 };
 
 update_db_table(prop);
