@@ -3,9 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>SQL Web Client</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    Hello World
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">Databases</div>
+            <div class="db-tree" id="dbTree"></div>
+        </aside>
+        <main class="main">
+            <div class="toolbar">
+                <button id="runBtn" class="primary">▶ Run</button>
+                <button id="clearBtn">Clear</button>
+                <span class="status" id="status"></span>
+            </div>
+            <div class="query-section">
+                <textarea id="queryInput" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+            </div>
+            <div class="results-section">
+                <div class="tabs">
+                    <button class="tab active" data-tab="results">Results</button>
+                    <button class="tab" data-tab="history">History</button>
+                </div>
+                <div class="tab-content active" id="resultsTab">
+                    <div class="table-container">
+                        <table id="resultsTable"></table>
+                    </div>
+                </div>
+                <div class="tab-content" id="historyTab">
+                    <div id="historyList"></div>
+                </div>
+            </div>
+            <div class="logs-section" id="logsSection">
+                <div class="logs-header">Logs</div>
+                <div class="logs-content" id="logsContent"></div>
+            </div>
+        </main>
+    </div>
+    <script src="/app.js"></script>
 </body>
 </html>
