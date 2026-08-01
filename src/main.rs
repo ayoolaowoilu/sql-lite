@@ -15,13 +15,15 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+const PORT: u16 = 6141;
+
 #[derive(Clone)]
 struct AppState {
     data_dir: PathBuf,
     connections: Arc<Mutex<HashMap<String, Arc<Mutex<Connection>>>>>,
-    active_db: Arc<Mutex<Option<String>>>, 
-    history: Arc<Mutex<Vec<QueryRecord>>>, 
-    logs: Arc<Mutex<Vec<LogEntry>>>, 
+    active_db: Arc<Mutex<Option<String>>>,
+    history: Arc<Mutex<Vec<QueryRecord>>>,
+    logs: Arc<Mutex<Vec<LogEntry>>>,
 }
 
 #[derive(Clone, Serialize)]
@@ -117,12 +119,6 @@ impl AppState {
         dbs
     }
 
-    fn open_connection(&self, name: &str) -> Result<Arc<Mutex<Connection>>, rusqlite::Error> {
-        let path = self.db_path(name);
-        let conn = Connection::open(&path)?;
-        Ok(Arc::new(Mutex::new(conn)))
-    }
-
     fn get_connection(&self, name: &str) -> Result<Arc<Mutex<Connection>>, String> {
         let mut conns = self.connections.lock().unwrap();
         if let Some(conn) = conns.get(name) {
@@ -169,10 +165,30 @@ impl AppState {
         if !path.exists() {
             return Err(format!("Database '{}' does not exist", name));
         }
-        // ensure connection exists
         drop(self.get_connection(name)?);
         *self.active_db.lock().unwrap() = Some(name.to_string());
         Ok(())
+    }
+}
+
+fn open_browser(url: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", url])
+            .spawn();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open")
+            .arg(url)
+            .spawn();
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open")
+            .arg(url)
+            .spawn();
     }
 }
 
@@ -200,8 +216,18 @@ async fn main() {
         .fallback_service(tower_http::services::ServeDir::new("static"))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("MySQLite running on http://0.0.0.0:3000");
+    let addr = format!("0.0.0.0:{}", PORT);
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    let url = format!("http://localhost:{}", PORT);
+    println!("MySQLite running on {}", url);
+
+    // Open browser after a short delay so the server is ready
+    let url_clone = url.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
+        open_browser(&url_clone);
+    });
+
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -271,7 +297,6 @@ async fn run_query(State(state): State<AppState>, Json(req): Json<QueryRequest>)
         message: None,
     };
 
-    // Parse CREATE DATABASE
     if sql_upper.starts_with("CREATE DATABASE") {
         let name = parse_db_name(&sql_raw);
         if name.is_empty() {
@@ -290,7 +315,6 @@ async fn run_query(State(state): State<AppState>, Json(req): Json<QueryRequest>)
         return Json(result);
     }
 
-    // Parse USE
     if sql_upper.starts_with("USE ") {
         let name = sql_raw[4..].trim().trim_end_matches(';').to_string();
         match state.set_active(&name) {
@@ -304,7 +328,6 @@ async fn run_query(State(state): State<AppState>, Json(req): Json<QueryRequest>)
         return Json(result);
     }
 
-    // Parse DROP DATABASE
     if sql_upper.starts_with("DROP DATABASE") {
         let name = parse_db_name(&sql_raw);
         if name.is_empty() {
@@ -320,7 +343,6 @@ async fn run_query(State(state): State<AppState>, Json(req): Json<QueryRequest>)
         return Json(result);
     }
 
-    // Everything else needs an active database
     let db_name = match state.active_db.lock().unwrap().clone() {
         Some(n) => n,
         None => {
@@ -398,11 +420,10 @@ async fn run_query(State(state): State<AppState>, Json(req): Json<QueryRequest>)
 
 fn parse_db_name(sql: &str) -> String {
     let parts: Vec<&str> = sql.split_whitespace().collect();
-    // CREATE DATABASE [IF NOT EXISTS] name
     if parts.len() >= 3 {
         let mut idx = 2;
         if parts.len() > 3 && parts[2].to_uppercase() == "IF" {
-            idx = 5; // skip IF NOT EXISTS
+            idx = 5;
         }
         if idx < parts.len() {
             return parts[idx].trim_end_matches(';').to_string();

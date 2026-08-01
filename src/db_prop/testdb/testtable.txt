@@ -1,2 +1,0 @@
-[name->string, id->int, active->bool, age->int]
-{"active":true,"age":30,"id":1,"name":"John Doe"}

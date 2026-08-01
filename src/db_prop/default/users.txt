@@ -1,9 +1,0 @@
-[id -> int , name -> string , email -> string]
-{"email":"dave@x.com","id":1,"name":"Alice"}
-{"email":"dave@x.com","id":3,"name":"Alice"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
-{"email":"dave@x.com","id":3,"name":"Dave"}
