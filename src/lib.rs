@@ -66,6 +66,7 @@ use crate::utils::read_write_fn::{BASE_PATH, UpdateProp, UpdateType, add_line_to
             target_value: None
         });
 
+        
         let content = std::fs::read_to_string(format!("{}/testdb/testtable.txt", BASE_PATH)).expect("Failed to read file");
         assert!(content.contains("name->string")); 
     }
