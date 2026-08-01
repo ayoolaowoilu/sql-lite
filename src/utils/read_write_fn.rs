@@ -4,7 +4,7 @@ use std::{fs, path::Path};
 use std::collections::HashMap;
 use serde_json::Value;
 
-const BASE_PATH: &str = r"./src/db_prop";
+pub const BASE_PATH: &str = r"./src/db_prop";
 
 pub struct DeleteProp {
     pub db_table: String,
@@ -381,7 +381,7 @@ fn update_row_values(props: UpdateProp) {
     );
 }
 
-fn update_schema_types(props: UpdateProp) {
+pub fn update_schema_types(props: UpdateProp) {
     let path_str = props.db_table.replace('.', "/");
     let path = format!("{}/{}.txt", BASE_PATH, path_str);
 
