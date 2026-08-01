@@ -223,6 +223,3 @@ serde_json = "1"
 
 ---
 
-## License
-
-MIT / whatever you want — it's your project.
