@@ -5,17 +5,17 @@
 }
 
 :root {
-  --bg-primary: #0f1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --border: #30363d;
-  --text-primary: #c9d1d9;
-  --text-secondary: #8b949e;
-  --accent: #58a6ff;
-  --accent-hover: #79b8ff;
-  --success: #3fb950;
-  --error: #f85149;
-  --warning: #d29922;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --border: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --accent: #000000;
+  --accent-hover: #333333;
+  --success: #1a7f37;
+  --error: #cf222e;
+  --warning: #9a6700;
   --font-mono: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -28,15 +28,47 @@ html, body {
   overflow: hidden;
 }
 
-.app {
+.page {
   display: flex;
+  flex-direction: column;
   height: 100vh;
-  width: 100vw;
+}
+
+.top-header {
+  height: 48px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.top-header .logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-header .logo svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.app {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Sidebar */
 .sidebar {
-  width: 260px;
+  width: 280px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
@@ -45,63 +77,140 @@ html, body {
 }
 
 .sidebar-header {
-  padding: 16px;
+  padding: 14px 16px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
+}
+
+.db-create {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.db-create input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.db-create input:focus {
+  border-color: var(--accent);
+}
+
+.db-create button {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.db-create button:hover {
+  background: var(--accent-hover);
+}
+
+.db-create button svg {
+  flex-shrink: 0;
+}
+
+.db-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.db-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.db-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.db-item.active {
+  background: #000000;
+  color: #ffffff;
+}
+
+.db-item.active .db-drop {
+  color: #ffffff;
+}
+
+.db-item .db-name {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
 }
 
-.sidebar-header::before {
-  content: "🗄️";
+.db-item .db-name svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.db-item.active .db-name svg {
+  opacity: 1;
+  color: #fff;
+}
+
+.db-item .db-drop {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--error);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.db-item:hover .db-drop {
+  opacity: 1;
+}
+
+.db-item .db-drop:hover {
+  background: rgba(207, 34, 46, 0.1);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
 }
 
 .db-tree {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-}
-
-.db-item {
-  margin-bottom: 4px;
-}
-
-.db-name {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  user-select: none;
-}
-
-.db-name:hover {
-  background: var(--bg-tertiary);
-}
-
-.db-name::before {
-  content: "▶";
-  font-size: 10px;
-  transition: transform 0.2s;
-  color: var(--text-secondary);
-}
-
-.db-item.expanded .db-name::before {
-  transform: rotate(90deg);
-}
-
-.table-list {
-  display: none;
-  padding-left: 24px;
-}
-
-.db-item.expanded .table-list {
-  display: block;
 }
 
 .table-item {
@@ -113,7 +222,7 @@ html, body {
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .table-item:hover {
@@ -121,10 +230,13 @@ html, body {
   color: var(--text-primary);
 }
 
-.table-item::before {
-  content: "⊟";
-  font-size: 11px;
-  opacity: 0.6;
+.table-item svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.table-item:hover svg {
+  opacity: 0.8;
 }
 
 /* Main Area */
@@ -146,20 +258,43 @@ html, body {
   flex-shrink: 0;
 }
 
+.db-badge {
+  padding: 4px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.db-badge.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 .toolbar button {
   padding: 6px 16px;
   border: 1px solid var(--border);
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   color: var(--text-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .toolbar button:hover {
-  background: var(--border);
+  background: var(--bg-tertiary);
+}
+
+.toolbar button svg {
+  flex-shrink: 0;
 }
 
 .toolbar button.primary {
@@ -194,7 +329,7 @@ html, body {
 
 #queryInput {
   width: 100%;
-  height: 120px;
+  height: 140px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -296,12 +431,24 @@ td {
 }
 
 tr:hover td {
-  background: rgba(88, 166, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .null-value {
   color: var(--text-secondary);
   font-style: italic;
+}
+
+/* Message box */
+.message-box {
+  padding: 40px;
+  text-align: center;
+  color: var(--success);
+  font-size: 14px;
+}
+
+.message-box.error {
+  color: var(--error);
 }
 
 /* History */
@@ -427,5 +574,5 @@ tr:hover td {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: #b0b8c0;
 }

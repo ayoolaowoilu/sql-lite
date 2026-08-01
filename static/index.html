@@ -3,43 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Web Client</title>
+    <title>MySQLite</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="sidebar-header">Databases</div>
-            <div class="db-tree" id="dbTree"></div>
-        </aside>
-        <main class="main">
-            <div class="toolbar">
-                <button id="runBtn" class="primary">▶ Run</button>
-                <button id="clearBtn">Clear</button>
-                <span class="status" id="status"></span>
-            </div>
-            <div class="query-section">
-                <textarea id="queryInput" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
-            </div>
-            <div class="results-section">
-                <div class="tabs">
-                    <button class="tab active" data-tab="results">Results</button>
-                    <button class="tab" data-tab="history">History</button>
+    <div class="page">
+        <header class="top-header">
+            <span class="logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+                    <path d="M3 12a9 3 0 0 0 18 0"/>
+                </svg>
+                MySQLite
+            </span>
+        </header>
+        <div class="app">
+            <aside class="sidebar">
+                <div class="sidebar-header">Databases</div>
+                <div class="db-create">
+                    <input id="newDbInput" placeholder="new_db_name">
+                    <button id="createDbBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Create
+                    </button>
                 </div>
-                <div class="tab-content active" id="resultsTab">
-                    <div class="table-container">
-                        <table id="resultsTable"></table>
+                <div class="db-list" id="dbList"></div>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-header">Tables</div>
+                <div class="db-tree" id="dbTree"></div>
+            </aside>
+            <main class="main">
+                <div class="toolbar">
+                    <div class="db-badge" id="dbBadge">No database selected</div>
+                    <button id="runBtn" class="primary">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Run
+                    </button>
+                    <button id="clearBtn">Clear</button>
+                    <span class="status" id="status"></span>
+                </div>
+                <div class="query-section">
+                    <textarea id="queryInput" placeholder="CREATE DATABASE mydb;
+USE mydb;
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
+INSERT INTO users (name) VALUES ('Alice');
+SELECT * FROM users;"></textarea>
+                </div>
+                <div class="results-section">
+                    <div class="tabs">
+                        <button class="tab active" data-tab="results">Results</button>
+                        <button class="tab" data-tab="history">History</button>
+                    </div>
+                    <div class="tab-content active" id="resultsTab">
+                        <div class="table-container">
+                            <table id="resultsTable"></table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="historyTab">
+                        <div id="historyList"></div>
                     </div>
                 </div>
-                <div class="tab-content" id="historyTab">
-                    <div id="historyList"></div>
+                <div class="logs-section" id="logsSection">
+                    <div class="logs-header">Logs</div>
+                    <div class="logs-content" id="logsContent"></div>
                 </div>
-            </div>
-            <div class="logs-section" id="logsSection">
-                <div class="logs-header">Logs</div>
-                <div class="logs-content" id="logsContent"></div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
     <script src="/app.js"></script>
 </body>
