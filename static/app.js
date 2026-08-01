@@ -44,11 +44,90 @@ class SQLApp {
       tab.addEventListener('click', () => this.switchTab(tab));
     });
 
+    this.initResizers();
     this.loadDatabases();
     this.loadHistory();
     this.loadLogs();
 
     setInterval(() => this.loadLogs(), 2000);
+  }
+
+  initResizers() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarResize = document.getElementById('sidebarResize');
+    const querySection = document.getElementById('querySection');
+    const queryResize = document.getElementById('queryResize');
+    const logsSection = document.getElementById('logsSection');
+    const logsResize = document.getElementById('logsResize');
+
+    let resizing = null;
+    let startPos = 0;
+    let startSize = 0;
+
+    const onMouseMove = (e) => {
+      if (!resizing) return;
+      e.preventDefault();
+
+      if (resizing === 'sidebar') {
+        const dx = e.clientX - startPos;
+        const newWidth = Math.max(180, Math.min(500, startSize + dx));
+        sidebar.style.width = newWidth + 'px';
+      } else if (resizing === 'query') {
+        const dy = e.clientY - startPos;
+        const newHeight = Math.max(80, Math.min(400, startSize + dy));
+        querySection.style.height = newHeight + 'px';
+      } else if (resizing === 'logs') {
+        const dy = startPos - e.clientY;
+        const newHeight = Math.max(80, Math.min(400, startSize + dy));
+        logsSection.style.height = newHeight + 'px';
+      }
+    };
+
+    const onMouseUp = () => {
+      if (!resizing) return;
+      if (sidebarResize) sidebarResize.classList.remove('resizing');
+      if (queryResize) queryResize.classList.remove('resizing');
+      if (logsResize) logsResize.classList.remove('resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      resizing = null;
+    };
+
+    if (sidebarResize) {
+      sidebarResize.addEventListener('mousedown', (e) => {
+        resizing = 'sidebar';
+        startPos = e.clientX;
+        startSize = sidebar.offsetWidth;
+        sidebarResize.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+    }
+
+    if (queryResize) {
+      queryResize.addEventListener('mousedown', (e) => {
+        resizing = 'query';
+        startPos = e.clientY;
+        startSize = querySection.offsetHeight;
+        queryResize.classList.add('resizing');
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none';
+      });
+    }
+
+    if (logsResize) {
+      logsResize.addEventListener('mousedown', (e) => {
+        resizing = 'logs';
+        startPos = e.clientY;
+        startSize = logsSection.offsetHeight;
+        logsResize.classList.add('resizing');
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none';
+      });
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   }
 
   async loadDatabases() {

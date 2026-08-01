@@ -19,7 +19,7 @@
             </span>
         </header>
         <div class="app">
-            <aside class="sidebar">
+            <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">Databases</div>
                 <div class="db-create">
                     <input id="newDbInput" placeholder="new_db_name">
@@ -36,7 +36,8 @@
                 <div class="sidebar-header">Tables</div>
                 <div class="db-tree" id="dbTree"></div>
             </aside>
-            <main class="main">
+            <div class="resize-handle-v" id="sidebarResize"></div>
+            <main class="main" id="mainArea">
                 <div class="toolbar">
                     <div class="db-badge" id="dbBadge">No database selected</div>
                     <button id="runBtn" class="primary">
@@ -48,14 +49,15 @@
                     <button id="clearBtn">Clear</button>
                     <span class="status" id="status"></span>
                 </div>
-                <div class="query-section">
+                <div class="query-section" id="querySection">
                     <textarea id="queryInput" placeholder="CREATE DATABASE mydb;
 USE mydb;
 CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
 INSERT INTO users (name) VALUES ('Alice');
 SELECT * FROM users;"></textarea>
                 </div>
-                <div class="results-section">
+                <div class="resize-handle-h" id="queryResize"></div>
+                <div class="results-section" id="resultsSection">
                     <div class="tabs">
                         <button class="tab active" data-tab="results">Results</button>
                         <button class="tab" data-tab="history">History</button>
@@ -69,6 +71,7 @@ SELECT * FROM users;"></textarea>
                         <div id="historyList"></div>
                     </div>
                 </div>
+                <div class="resize-handle-h" id="logsResize"></div>
                 <div class="logs-section" id="logsSection">
                     <div class="logs-header">Logs</div>
                     <div class="logs-content" id="logsContent"></div>
