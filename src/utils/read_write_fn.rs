@@ -1,4 +1,5 @@
 
+use std::{eprint, eprintln, print, println};
 use std::{fs, path::Path};
 use std::collections::HashMap;
 use serde_json::Value;
@@ -309,7 +310,7 @@ fn update_row_values(props: UpdateProp) {
         }
     };
 
-    // Validate update values against schema
+
     for (col_name, value) in &props.updates {
         let Some(expected_type) = schema.get(col_name) else {
             eprintln!("Validation failed: unknown column '{}'", col_name);
@@ -345,7 +346,7 @@ fn update_row_values(props: UpdateProp) {
             }
         };
 
-        // Match: compare the column value directly against target_value
+
         let matches = row.get(&props.target_column) == props.target_value.as_ref();
 
         if matches {
@@ -406,8 +407,7 @@ fn update_schema_types(props: UpdateProp) {
         }
     };
 
-    // Validate and apply type changes
-    // props.updates: key = column name, value = new type (as Value::String)
+  
     for (col_name, new_type_val) in &props.updates {
         let Some(new_type) = new_type_val.as_str() else {
             eprintln!("Type change for '{}' must be a string", col_name);
@@ -430,7 +430,7 @@ fn update_schema_types(props: UpdateProp) {
         schema.insert(col_name.clone(), new_type.to_string());
     }
 
-    // Validate existing rows against new schema
+  
     for line in &lines[1..] {
         let trimmed = line.trim();
         if trimmed.is_empty() {
@@ -452,7 +452,7 @@ fn update_schema_types(props: UpdateProp) {
         }
     }
 
-    // Commit new schema
+
     let schema_parts: Vec<String> = schema
         .iter()
         .map(|(k, v)| format!("{}->{}", k, v))
@@ -474,4 +474,59 @@ fn update_schema_types(props: UpdateProp) {
             println!("  {} -> {}", col, t);
         }
     }
+}
+
+
+pub fn create_db(db_name:&str){
+     match fs::create_dir(format!("{}/{}" , BASE_PATH ,db_name )) {
+          Ok(_)=> println!("Database '{}' has been created successfully" , db_name),
+          Err(_) => {
+               eprintln!("Failed to create Database");
+               return;
+          }
+     }
+}
+
+pub fn create_table(db_props: &str, schemas: Vec<&String>) {
+  
+    let parts: Vec<&str> = db_props.split('.').collect();
+    if parts.len() != 2 {
+        eprintln!("Invalid table name '{}'. Expected format: db.table", db_props);
+        return;
+    }
+    let db_name = parts[0];
+    let table_name = parts[1];
+
+
+    let db_path = format!("{}/{}", BASE_PATH, db_name);
+    if let Err(e) = fs::create_dir_all(&db_path) {
+        eprintln!("Failed to create database directory '{}': {}", db_path, e);
+        return;
+    }
+
+
+    let mut schema_parts: Vec<String> = schemas.iter().map(|s| (*s).clone()).collect();
+    
+  
+    let has_id = schema_parts.iter().any(|s| s.starts_with("id->"));
+    if !has_id {
+        schema_parts.insert(0, "id->int".to_string());
+    }
+    
+    let schema_line = format!("[{}]", schema_parts.join(", "));
+
+
+    let file_path = format!("{}/{}.txt", db_path, table_name);
+    
+    if Path::new(&file_path).exists() {
+        eprintln!("Table '{}' already exists", db_props);
+        return;
+    }
+
+    if let Err(e) = fs::write(&file_path, format!("{}\n", schema_line)) {
+        eprintln!("Failed to create table '{}': {}", db_props, e);
+        return;
+    }
+
+    println!("Table '{}' created with schema: {}", db_props, schema_line);
 }

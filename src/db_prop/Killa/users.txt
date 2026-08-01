@@ -1,0 +1,1 @@
+[id->int, name->string, age->int, active->bool]
