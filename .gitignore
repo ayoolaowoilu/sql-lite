@@ -1,1 +1,22 @@
-/target
+# Rust
+target/
+Cargo.lock
+
+# Data files
+data/
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.exe
+*.msi
+*.dmg

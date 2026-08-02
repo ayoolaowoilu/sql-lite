@@ -1,225 +1,150 @@
-# sql lite
+# ◈ MySQLite
 
-A lightweight, file-based database engine written in Rust. No external database server required — every database is a folder, every table is a text file.
+A lightweight, browser-based SQLite database manager built with **Rust** and **Axum**. Create databases, run queries, manage tables — all through a clean web interface. Data persists to real `.db` files on disk.
 
----
+![License](https://img.shields.io/badge/license-MIT-black)
+![Rust](https://img.shields.io/badge/rust-1.75%2B-black?logo=rust)
 
-## How It Works
+<p align="center">
+  <img src="assets/icon.png" width="120" alt="MySQLite Logo">
+</p>
 
-```
-src/db_prop/
-├── mydb/                    ← Database (folder)
-│   ├── users.txt            ← Table (text file)
-│   └── orders.txt           ← Another table
-└── another_db/
-    └── products.txt
-```
+## Features
 
-Each table file has:
-- **Line 1**: Schema definition
-- **Lines 2+**: One JSON object per row
+- **Multi-database support** — Create, switch between, and drop multiple `.db` files
+- **MySQL-like commands** — Use `CREATE DATABASE`, `USE`, `DROP DATABASE` just like MySQL
+- **Full SQL support** — `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE`, `ALTER`, `DROP`, `PRAGMA`
+- **Resizable UI** — Drag to resize sidebar, query editor, results panel, and logs
+- **Query history** — Every query is logged and clickable to restore
+- **Live logs** — Auto-refreshing execution log at the bottom
+- **Table browser** — Click any table in the sidebar to auto-generate a `SELECT` query
+- **Light theme** — Clean, professional light UI with black accents
+- **Auto-opens browser** — Double-click the `.exe` and the site opens automatically
+- **Zero config** — No installation, no dependencies, just run and go
 
----
+## Quick Start
 
-## Schema Format
+### Pre-built (Windows)
 
-```
-[id->int, name->string, age->int, active->bool]
-```
+1. Download the latest release
+2. Extract the folder
+3. Double-click `mysqlite.exe`
+4. Your browser opens at `http://localhost:6141`
 
-| Type     | JSON Example              |
-|----------|---------------------------|
-| `string` | `"Alice"`                 |
-| `int`    | `42`                      |
-| `float`  | `3.14`                    |
-| `bool`   | `true` / `false`          |
+### Build from source
 
-The `id` column is auto-injected if omitted. It auto-increments on every insert.
+```bash
+# Clone
+git clone https://github.com/yourname/mysqlite.git
+cd mysqlite
 
----
+# Build release
+cargo build --release
 
-## Row Format
-
-Each row is a single line of compact JSON:
-
-```json
-{"id":1,"name":"Alice","age":25,"active":true}
-{"id":2,"name":"Bob","age":30,"active":false}
+# Run
+cargo run --release
 ```
 
----
+The server starts on **port 6141** and automatically opens your default browser.
 
-## API
+## Usage
 
-### Create a Database
+```sql
+-- Create a new database file
+CREATE DATABASE shop;
 
-```rust
-create_database("mydb");
+-- Switch to it
+USE shop;
+
+-- Create tables
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT
+);
+
+-- Insert data
+INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
+INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com');
+
+-- Query
+SELECT * FROM users;
+
+-- Drop when done
+DROP DATABASE shop;
 ```
 
-Creates the folder `./src/db_prop/mydb/`.
+All databases are stored as real SQLite `.db` files in the `data/` folder.
 
----
+## File Structure
 
-### Create a Table
-
-```rust
-let schemas = vec![
-    "name->string",
-    "age->int",
-    "active->bool",
-];
-
-create_table("mydb.users", schemas);
+```
+mysqlite/
+├── Cargo.toml          # Rust dependencies
+├── build.rs            # Windows icon embedding
+├── src/
+│   └── main.rs         # Axum server + SQLite engine
+├── static/             # Frontend files
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+├── assets/             # App icons
+│   ├── icon.svg
+│   ├── icon.png
+│   └── icon.ico
+└── data/               # Your .db files (auto-created)
 ```
 
-Creates `./src/db_prop/mydb/users.txt` with:
-```
-[id->int, name->string, age->int, active->bool]
-```
+## Building a Windows .exe with Icon
 
----
+### Requirements
 
-### Insert a Row
+- Windows with [Rust](https://rustup.rs/) installed
+- Visual Studio Build Tools (or MinGW)
 
-```rust
-use std::collections::HashMap;
-use serde_json::json;
+### Steps
 
-let mut data = HashMap::new();
-data.insert("name".into(), json!("Alice"));
-data.insert("age".into(), json!(25));
-data.insert("active".into(), json!(true));
+```bash
+# 1. Install Windows resource compiler dependency
+cargo install cargo-wix  # optional: for MSI installer
 
-add_line_to_db_table("mydb.users", data);
-```
+# 2. Build release (icon auto-embedded from assets/icon.ico)
+cargo build --release
 
-Output:
-```
-Added row id 1 to mydb.users
+# 3. Output
+# target/release/mysqlite.exe
 ```
 
----
+The `.exe` will have the database cylinder icon in Explorer, Taskbar, and Alt-Tab.
 
-### Query (SELECT)
+### Cross-compile from Linux/Mac
 
-```rust
-let rows = read_table(&QueryProp {
-    db_table: "mydb.users".into(),
-    select: vec!["name".into(), "age".into()],   // empty = SELECT *
-    where_col: Some("active".into()),             // optional filter
-    where_val: Some(json!(true)),
-    limit: Some(5),                               // optional limit
-});
+```bash
+# Install target
+rustup target add x86_64-pc-windows-gnu
 
-for row in rows {
-    println!("{:?}", row);
-}
+# Linux: install mingw
+sudo apt-get install mingw-w64
+
+# Build
+cargo build --release --target x86_64-pc-windows-gnu
 ```
 
----
+## Keyboard Shortcuts
 
-### Update a Row
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl + Enter` | Run query |
+| `Enter` (in DB name input) | Create database |
 
-```rust
-let mut updates = HashMap::new();
-updates.insert("name".into(), json!("Alicia"));
+## Tech Stack
 
-update_db_table(UpdateProp {
-    db_table: "mydb.users".into(),
-    updates,
-    update_type: UpdateType::Value,
-    target_column: "id".into(),
-    target_value: Some(json!(1)),
-});
-```
+| Layer | Tech |
+|-------|------|
+| Backend | Rust, Axum, Tokio, rusqlite |
+| Frontend | Vanilla JS, CSS Grid/Flexbox, SVG icons |
+| Database | SQLite (file-based) |
 
----
+## License
 
-### Update a Column Type (Schema Change)
-
-```rust
-let mut type_changes = HashMap::new();
-type_changes.insert("age".into(), json!("float"));
-
-update_db_table(UpdateProp {
-    db_table: "mydb.users".into(),
-    updates: type_changes,
-    update_type: UpdateType::Type,
-    target_column: "".into(),
-    target_value: None,
-});
-```
-
-Rejects the change if existing rows violate the new type.
-
----
-
-### Delete a Row
-
-```rust
-delete_line_from_db_table(DeleteProp {
-    db_table: "mydb.users".into(),
-    target_id: 1,
-});
-```
-
----
-
-### Read All Tables in a Database
-
-```rust
-read_db("mydb");
-```
-
-Prints every table and its schema to stdout.
-
----
-
-## Type System
-
-| Rust `serde_json::Value` | Schema Type | Validated By |
-|---------------------------|-------------|--------------|
-| `Value::String`          | `string`    | `value.is_string()` |
-| `Value::Number` (int)    | `int`       | `value.is_u64() \|\| value.is_i64()` |
-| `Value::Number` (float)  | `float`     | `value.is_f64()` |
-| `Value::Bool`            | `bool`      | `value.is_boolean()` |
-
-All inserts and updates are validated against the schema before writing.
-
----
-
-## Limitations
-
-- **No indexes** — every `WHERE` query scans the entire table file.
-- **No joins** — query one table at a time.
-- **No transactions** — writes are immediate; a crash mid-write can corrupt a table.
-- **Single-file per table** — large tables = large files = slower reads.
-- **No concurrent access safety** — two threads writing the same file will race.
-
-This is designed for small-scale, embedded, or prototyping use cases. For production workloads, use SQLite, PostgreSQL, or another full database engine.
-
----
-
-## File Example
-
-`./src/db_prop/shop/products.txt`:
-```
-[id->int, name->string, price->float, in_stock->bool]
-{"id":1,"name":"Keyboard","price":49.99,"in_stock":true}
-{"id":2,"name":"Mouse","price":19.99,"in_stock":false}
-{"id":3,"name":"Monitor","price":199.99,"in_stock":true}
-```
-
----
-
-## Dependencies
-
-```toml
-[dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-```
-
----
-
+MIT — do whatever you want.
