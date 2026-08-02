@@ -1,15 +1,28 @@
 name: Build Windows EXE
 
-on: push
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-action@stable
-      - run: cargo build --release
-      - uses: actions/upload-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
         with:
-          name: sq-lite-exe
-          path: target/release/sq-lite.exe
+          name: sq-lite-windows
+          path: |
+            target/release/sq-lite.exe
+            static/
+            data/
