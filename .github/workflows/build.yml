@@ -1,0 +1,15 @@
+name: Build Windows EXE
+
+on: push
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-action@stable
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sq-lite-exe
+          path: target/release/sq-lite.exe
