@@ -47,18 +47,17 @@ cargo run --release
 
 The server starts on **port 6141** and automatically opens your default browser.
 
-### Connect with a MySQL client
+### MySQL connections
 
-The app also provides a local MySQL-protocol listener on **127.0.0.1:9995**. Set
-`MYSQL_PASSWORD` before starting the app; the listener accepts the `root` user with
-that password. It remains disabled when the variable is not set.
+On first launch, set the password for the default **MySQLite Local** connection.
+It is saved in the operating system's secure credential store. After that,
+MySQLite opens a connection manager with the local connection and any external
+MySQL profiles you add. Enter the password each time you connect; saved profiles
+contain connection details only, not passwords.
 
-In PowerShell:
-
-```powershell
-$env:MYSQL_PASSWORD = "choose-a-local-password"
-cargo run
-```
+The local MySQL-protocol listener is available at **127.0.0.1:9995**. External
+profiles connect to MySQL-compatible servers over TLS. The database browser,
+schema view, and query editor work against the currently connected server.
 
 Install `mysql2` in your Node.js project (`npm install mysql2`) and connect with:
 
@@ -69,7 +68,7 @@ const connection = await mysql.createConnection({
   host: '127.0.0.1',
   port: 9995,
   user: 'root',
-  password: process.env.MYSQL_PASSWORD,
+  password: 'your-local-connection-password',
   database: 'shop'
 });
 
@@ -79,10 +78,11 @@ await connection.end();
 ```
 
 Create the SQLite database first in the app, or issue `CREATE DATABASE shop` and
-`USE shop` over the connection. The listener supports MySQL text-protocol queries
-through `connection.query()`; it is a compatibility bridge to SQLite, not a full
-MySQL server. MySQL-specific SQL features and prepared-statement calls such as
-`connection.execute()` are not supported. The listener binds only to loopback.
+`USE shop` over the connection. The local listener is a compatibility bridge to
+SQLite, not a full MySQL server; MySQL-specific SQL and prepared-statement calls
+such as `connection.execute()` are not supported there. On Windows, the local
+password is saved in Windows Credential Manager. Older setups can still migrate
+an existing `MYSQL_PASSWORD` environment variable into secure storage.
 
 ## Usage
 

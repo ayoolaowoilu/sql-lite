@@ -614,3 +614,378 @@ tr:hover td {
 ::-webkit-scrollbar-thumb:hover {
   background: #b0b8c0;
 }
+
+/* First-run MySQL password setup */
+.password-setup[hidden],
+.password-setup-error[hidden] {
+  display: none;
+}
+
+.password-setup {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 17, 20, 0.72);
+}
+
+.password-setup-card {
+  width: min(100%, 440px);
+  padding: 36px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-primary);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.password-setup-icon {
+  display: flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.password-setup-card h1 {
+  margin-bottom: 8px;
+  font-size: 23px;
+  letter-spacing: -0.5px;
+}
+
+.password-setup-card > p {
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.password-setup-card label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.password-setup-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.password-setup-card input:focus {
+  border-color: var(--accent);
+  outline: 2px solid rgba(31, 35, 40, 0.12);
+}
+
+.password-setup-card .password-setup-note {
+  margin: 16px 0;
+  font-size: 12px;
+}
+
+.password-setup-card .password-setup-error {
+  margin: 12px 0;
+  color: var(--error);
+  font-size: 13px;
+}
+
+.password-setup-card button {
+  width: 100%;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.password-setup-card button:hover {
+  background: var(--accent-hover);
+}
+
+.password-setup-card button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 480px) {
+  .password-setup-card {
+    padding: 26px 22px;
+  }
+}
+
+.top-header {
+  justify-content: space-between;
+}
+
+.top-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.top-header-actions button {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.top-header-actions button:hover {
+  border-color: var(--accent);
+}
+
+.connection-picker[hidden] {
+  display: none;
+}
+
+.connection-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: auto;
+  padding: 56px 24px;
+  background: var(--bg-secondary);
+}
+
+.connection-window {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  box-shadow: 0 16px 48px rgba(31, 35, 40, 0.1);
+}
+
+.connection-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30px 36px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.connection-window-header svg {
+  color: var(--accent);
+}
+
+.connection-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.connection-window-header h1 {
+  font-size: 25px;
+  letter-spacing: -0.6px;
+}
+
+.connection-window-header p {
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.connections-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(270px, 1fr);
+  gap: 36px;
+  padding: 32px 36px 36px;
+}
+
+.connections-content h2 {
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.connection-list {
+  display: grid;
+  gap: 10px;
+}
+
+.connection-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.connection-card:hover {
+  border-color: var(--accent);
+}
+
+.connection-card-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.connection-card-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.connection-card-details strong,
+.connection-card-details span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connection-card-details strong {
+  font-size: 14px;
+}
+
+.connection-card-details span {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.connection-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-card-actions button,
+.add-connection-form button,
+.connection-password-actions button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connection-card-actions .connect-profile,
+.add-connection-form button,
+.connection-password-actions button[type="submit"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.connection-card-actions .delete-profile {
+  padding: 8px;
+  color: var(--text-secondary);
+}
+
+.add-connection-form {
+  padding-left: 28px;
+  border-left: 1px solid var(--border);
+}
+
+.add-connection-form label {
+  display: block;
+  margin: 12px 0 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.add-connection-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.connection-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px;
+  gap: 12px;
+}
+
+.add-connection-form button {
+  width: 100%;
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.add-connection-form .connection-form-error {
+  margin-top: 10px;
+  color: var(--error);
+  font-size: 12px;
+}
+
+.connection-password-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.connection-password-actions button {
+  width: auto;
+  flex: 1;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .connection-picker {
+    padding: 20px 12px;
+  }
+
+  .connection-window-header,
+  .connections-content {
+    padding: 22px;
+  }
+
+  .connections-content {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .add-connection-form {
+    padding: 24px 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 440px) {
+  .connection-card {
+    flex-wrap: wrap;
+  }
+
+  .connection-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

@@ -13,7 +13,29 @@ class SQLApp {
     this.newDbInput = document.getElementById('newDbInput');
     this.createDbBtn = document.getElementById('createDbBtn');
     this.tabs = document.querySelectorAll('.tab');
+    this.passwordSetup = document.getElementById('passwordSetup');
+    this.passwordSetupForm = document.getElementById('passwordSetupForm');
+    this.passwordSetupError = document.getElementById('passwordSetupError');
+    this.passwordSetupButton = document.getElementById('passwordSetupButton');
+    this.mysqlPassword = document.getElementById('mysqlPassword');
+    this.mysqlPasswordConfirmation = document.getElementById('mysqlPasswordConfirmation');
+    this.connectionPicker = document.getElementById('connectionPicker');
+    this.connectionList = document.getElementById('connectionList');
+    this.addConnectionForm = document.getElementById('addConnectionForm');
+    this.connectionFormError = document.getElementById('connectionFormError');
+    this.connectionPasswordDialog = document.getElementById('connectionPasswordDialog');
+    this.connectionPasswordForm = document.getElementById('connectionPasswordForm');
+    this.connectionPasswordTitle = document.getElementById('connectionPasswordTitle');
+    this.connectionPasswordDescription = document.getElementById('connectionPasswordDescription');
+    this.connectionPassword = document.getElementById('connectionPassword');
+    this.connectionPasswordError = document.getElementById('connectionPasswordError');
+    this.connectButton = document.getElementById('connectButton');
+    this.disconnectBtn = document.getElementById('disconnectBtn');
+    this.connectionName = document.getElementById('connectionName');
     this.activeDb = null;
+    this.pendingProfile = null;
+    this.connectedProfile = null;
+    this.workspaceStarted = false;
     this.init();
   }
 
@@ -45,9 +67,272 @@ class SQLApp {
     });
 
     this.initResizers();
+    this.passwordSetupForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.saveMysqlPassword();
+    });
+    this.addConnectionForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.addConnectionProfile();
+    });
+    this.connectionPasswordForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.connectSelectedProfile();
+    });
+    document.getElementById('cancelConnectionBtn').addEventListener('click', () => {
+      this.connectionPasswordDialog.hidden = true;
+      this.connectionPasswordForm.reset();
+    });
+    this.disconnectBtn.addEventListener('click', () => this.disconnectProfile());
+    window.addEventListener('pagehide', () => {
+      fetch('/api/connections/disconnect', { method: 'POST', keepalive: true }).catch(() => {});
+    });
+    this.checkMysqlSetup();
+  }
+
+  async checkMysqlSetup() {
+    try {
+      const disconnect = await fetch('/api/connections/disconnect', { method: 'POST' });
+      if (!disconnect.ok) throw new Error('Could not clear the previous connection.');
+      const response = await fetch('/api/mysql/status');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not check MySQL setup.');
+      if (data.configured) {
+        this.showConnectionPicker();
+      } else {
+        this.passwordSetup.hidden = false;
+        this.mysqlPassword.focus();
+      }
+    } catch (error) {
+      this.showPasswordSetupError(error.message);
+    }
+  }
+
+  async saveMysqlPassword() {
+    this.passwordSetupError.hidden = true;
+    this.passwordSetupButton.disabled = true;
+    try {
+      const response = await fetch('/api/mysql/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: this.mysqlPassword.value,
+          confirmation: this.mysqlPasswordConfirmation.value
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not save the MySQL password.');
+      const password = this.mysqlPassword.value;
+      this.passwordSetupForm.reset();
+      this.passwordSetup.hidden = true;
+      try {
+        await this.connectProfile(this.localProfile(), password);
+      } catch (error) {
+        this.showConnectionPicker();
+        this.showConnectionPassword(this.localProfile());
+        this.connectionPasswordError.textContent = error.message;
+        this.connectionPasswordError.hidden = false;
+      }
+    } catch (error) {
+      this.showPasswordSetupError(error.message);
+    } finally {
+      this.passwordSetupButton.disabled = false;
+    }
+  }
+
+  showPasswordSetupError(message) {
+    this.passwordSetup.hidden = false;
+    this.passwordSetupError.textContent = message;
+    this.passwordSetupError.hidden = false;
+  }
+
+  localProfile() {
+    return {
+      id: 'local-mysqlite',
+      name: 'MySQLite Local',
+      kind: 'local',
+      host: '127.0.0.1',
+      port: 9995,
+      user: 'root'
+    };
+  }
+
+  loadConnectionProfiles() {
+    const local = this.localProfile();
+    try {
+      const stored = JSON.parse(localStorage.getItem('mysqlite-connections') || '[]');
+      const profiles = Array.isArray(stored)
+        ? stored.filter(profile => profile && profile.kind === 'mysql' && profile.id && profile.name && profile.host && profile.user)
+        : [];
+      return [local, ...profiles.filter(profile => profile.id !== local.id)];
+    } catch (error) {
+      this.connectionFormError.textContent = `Could not load saved connections: ${error.message}`;
+      this.connectionFormError.hidden = false;
+      return [local];
+    }
+  }
+
+  saveConnectionProfiles(profiles) {
+    localStorage.setItem('mysqlite-connections', JSON.stringify(
+      profiles.filter(profile => profile.kind === 'mysql')
+    ));
+  }
+
+  showConnectionPicker() {
+    this.passwordSetup.hidden = true;
+    this.connectionPicker.hidden = false;
+    this.renderConnectionProfiles();
+  }
+
+  renderConnectionProfiles() {
+    const profiles = this.loadConnectionProfiles();
+    this.connectionList.replaceChildren();
+    profiles.forEach(profile => {
+      const card = document.createElement('article');
+      card.className = 'connection-card';
+
+      const icon = document.createElement('span');
+      icon.className = 'connection-card-icon';
+      icon.innerHTML = this.svgDatabase();
+
+      const details = document.createElement('span');
+      details.className = 'connection-card-details';
+      const name = document.createElement('strong');
+      name.textContent = profile.name;
+      const address = document.createElement('span');
+      address.textContent = `${profile.user}@${profile.host}:${profile.port}`;
+      details.append(name, address);
+
+      const actions = document.createElement('div');
+      actions.className = 'connection-card-actions';
+      const connect = document.createElement('button');
+      connect.type = 'button';
+      connect.className = 'connect-profile';
+      connect.textContent = 'Connect';
+      connect.addEventListener('click', () => this.showConnectionPassword(profile));
+      actions.appendChild(connect);
+
+      if (profile.kind !== 'local') {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'delete-profile';
+        remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', `Remove ${profile.name}`);
+        remove.addEventListener('click', () => this.removeConnectionProfile(profile.id));
+        actions.appendChild(remove);
+      }
+
+      card.append(icon, details, actions);
+      this.connectionList.appendChild(card);
+    });
+  }
+
+  addConnectionProfile() {
+    this.connectionFormError.hidden = true;
+    const formData = new FormData(this.addConnectionForm);
+    const profile = {
+      id: `mysql-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name: String(formData.get('name')).trim(),
+      kind: 'mysql',
+      host: String(formData.get('host')).trim(),
+      port: Number(formData.get('port')),
+      user: String(formData.get('user')).trim()
+    };
+    if (!profile.name || !profile.host || !profile.user || !Number.isInteger(profile.port) || profile.port < 1 || profile.port > 65535) {
+      this.connectionFormError.textContent = 'Enter a name, hostname, username, and valid port.';
+      this.connectionFormError.hidden = false;
+      return;
+    }
+    try {
+      const profiles = this.loadConnectionProfiles();
+      this.saveConnectionProfiles([...profiles, profile]);
+      this.addConnectionForm.reset();
+      document.getElementById('profileHost').value = '127.0.0.1';
+      document.getElementById('profilePort').value = '3306';
+      document.getElementById('profileUser').value = 'root';
+      this.renderConnectionProfiles();
+    } catch (error) {
+      this.connectionFormError.textContent = `Could not save this connection: ${error.message}`;
+      this.connectionFormError.hidden = false;
+    }
+  }
+
+  removeConnectionProfile(id) {
+    try {
+      this.saveConnectionProfiles(this.loadConnectionProfiles().filter(profile => profile.id !== id));
+      this.renderConnectionProfiles();
+    } catch (error) {
+      this.connectionFormError.textContent = `Could not remove this connection: ${error.message}`;
+      this.connectionFormError.hidden = false;
+    }
+  }
+
+  showConnectionPassword(profile) {
+    this.pendingProfile = profile;
+    this.connectionPasswordTitle.textContent = `Connect to ${profile.name}`;
+    this.connectionPasswordDescription.textContent = `${profile.user}@${profile.host}:${profile.port}`;
+    this.connectionPasswordError.hidden = true;
+    this.connectionPasswordForm.reset();
+    this.connectionPasswordDialog.hidden = false;
+    this.connectionPassword.focus();
+  }
+
+  async connectSelectedProfile() {
+    if (!this.pendingProfile) return;
+    this.connectButton.disabled = true;
+    this.connectionPasswordError.hidden = true;
+    try {
+      await this.connectProfile(this.pendingProfile, this.connectionPassword.value);
+      this.connectionPasswordForm.reset();
+      this.connectionPasswordDialog.hidden = true;
+    } catch (error) {
+      this.connectionPasswordError.textContent = error.message;
+      this.connectionPasswordError.hidden = false;
+    } finally {
+      this.connectButton.disabled = false;
+    }
+  }
+
+  async connectProfile(profile, password) {
+    const response = await fetch('/api/connections/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile, password })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not connect to this server.');
+    this.pendingProfile = null;
+    this.startWorkspace(profile);
+  }
+
+  async disconnectProfile() {
+    try {
+      const response = await fetch('/api/connections/disconnect', { method: 'POST' });
+      if (!response.ok) throw new Error('Could not disconnect from the server.');
+      this.connectedProfile = null;
+      this.activeDb = null;
+      this.connectionName.hidden = true;
+      this.disconnectBtn.hidden = true;
+      this.connectionPicker.hidden = false;
+      this.renderConnectionProfiles();
+    } catch (error) {
+      this.log('ERROR', error.message);
+    }
+  }
+
+  startWorkspace(profile) {
+    this.passwordSetup.hidden = true;
+    this.connectionPicker.hidden = true;
+    this.connectionPasswordDialog.hidden = true;
+    this.connectedProfile = profile;
+    this.connectionName.textContent = profile.name;
+    this.connectionName.hidden = false;
+    this.disconnectBtn.hidden = false;
     this.loadDatabases();
     this.loadHistory();
     this.loadLogs();
+    if (this.workspaceStarted) return;
+    this.workspaceStarted = true;
 
     setInterval(() => this.loadLogs(), 2000);
   }
@@ -134,6 +419,7 @@ class SQLApp {
     try {
       const res = await fetch('/api/databases');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load databases.');
       this.activeDb = data.active;
       this.renderDbList(data.databases);
       this.updateDbBadge();

@@ -14,6 +14,8 @@ chrono = "0.4"
 tower-http = { version = "0.5", features = ["fs"] }
 sha1 = "0.10"
 rand = "0.8"
+keyring = "3.6.3"
+mysql = { version = "28", default-features = false, features = ["minimal-rust", "rustls-tls-ring"] }
 
 [target.'cfg(windows)'.build-dependencies]
 tauri-winres = "0.1"

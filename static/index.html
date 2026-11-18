@@ -7,6 +7,86 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <div class="password-setup" id="passwordSetup" role="dialog" aria-modal="true" aria-labelledby="passwordSetupTitle">
+        <form class="password-setup-card" id="passwordSetupForm">
+            <div class="password-setup-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+                    <path d="M3 12a9 3 0 0 0 18 0"/>
+                </svg>
+            </div>
+            <h1 id="passwordSetupTitle">Set your MySQL password</h1>
+            <p>Set the password for the default local MySQLite connection. You'll enter it whenever you connect.</p>
+            <label for="mysqlPassword">MySQL root password</label>
+            <input id="mysqlPassword" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+            <label for="mysqlPasswordConfirmation">Confirm password</label>
+            <input id="mysqlPasswordConfirmation" name="confirmation" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+            <p class="password-setup-note">Saved securely on this computer for the local MySQL listener.</p>
+            <p class="password-setup-error" id="passwordSetupError" role="alert" hidden></p>
+            <button type="submit" id="passwordSetupButton">Save password and continue</button>
+        </form>
+    </div>
+    <section class="connection-picker" id="connectionPicker" hidden aria-labelledby="connectionPickerTitle">
+        <div class="connection-window">
+            <header class="connection-window-header">
+                <div>
+                    <span class="connection-eyebrow">MYSQLITE</span>
+                    <h1 id="connectionPickerTitle">MySQL Connections</h1>
+                    <p>Select a saved connection or add a MySQL server.</p>
+                </div>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+                    <path d="M3 12a9 3 0 0 0 18 0"/>
+                </svg>
+            </header>
+            <div class="connections-content">
+                <section class="saved-connections">
+                    <h2>Saved Connections</h2>
+                    <div class="connection-list" id="connectionList"></div>
+                </section>
+                <form class="add-connection-form" id="addConnectionForm">
+                    <h2>New MySQL Connection</h2>
+                    <label for="profileName">Connection name</label>
+                    <input id="profileName" name="name" placeholder="My development server" required maxlength="60">
+                    <div class="connection-fields">
+                        <div>
+                            <label for="profileHost">Hostname</label>
+                            <input id="profileHost" name="host" value="127.0.0.1" required>
+                        </div>
+                        <div>
+                            <label for="profilePort">Port</label>
+                            <input id="profilePort" name="port" type="number" value="3306" min="1" max="65535" required>
+                        </div>
+                    </div>
+                    <label for="profileUser">Username</label>
+                    <input id="profileUser" name="user" value="root" required>
+                    <button type="submit">Add Connection</button>
+                    <p class="connection-form-error" id="connectionFormError" role="alert" hidden></p>
+                </form>
+            </div>
+        </div>
+    </section>
+    <div class="password-setup" id="connectionPasswordDialog" hidden role="dialog" aria-modal="true" aria-labelledby="connectionPasswordTitle">
+        <form class="password-setup-card" id="connectionPasswordForm">
+            <div class="password-setup-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <h1 id="connectionPasswordTitle">Connect</h1>
+            <p id="connectionPasswordDescription">Enter the password for this connection.</p>
+            <label for="connectionPassword">Password</label>
+            <input id="connectionPassword" type="password" autocomplete="current-password" required>
+            <p class="password-setup-error" id="connectionPasswordError" role="alert" hidden></p>
+            <div class="connection-password-actions">
+                <button type="button" class="secondary-button" id="cancelConnectionBtn">Cancel</button>
+                <button type="submit" id="connectButton">Connect</button>
+            </div>
+        </form>
+    </div>
     <div class="page">
         <header class="top-header">
             <span class="logo">
@@ -17,6 +97,10 @@
                 </svg>
                 MySQLite
             </span>
+            <div class="top-header-actions">
+                <span id="connectionName" hidden></span>
+                <button id="disconnectBtn" type="button" hidden>Change Connection</button>
+            </div>
         </header>
         <div class="app">
             <aside class="sidebar" id="sidebar">

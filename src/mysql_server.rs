@@ -58,20 +58,19 @@ impl QueryResult {
     }
 }
 
-pub async fn serve(listener: TcpListener, state: AppState, password: String) -> io::Result<()> {
+pub async fn serve(listener: TcpListener, state: AppState) -> io::Result<()> {
     loop {
         let (stream, peer) = listener.accept().await?;
         let state = state.clone();
-        let password = password.clone();
         tokio::spawn(async move {
-            if let Err(error) = handle_client(stream, state, password).await {
+            if let Err(error) = handle_client(stream, state).await {
                 eprintln!("MySQL client {} disconnected: {}", peer, error);
             }
         });
     }
 }
 
-async fn handle_client(mut stream: TcpStream, state: AppState, password: String) -> io::Result<()> {
+async fn handle_client(mut stream: TcpStream, state: AppState) -> io::Result<()> {
     let mut seed = [0u8; 20];
     rand::thread_rng().fill_bytes(&mut seed);
     write_packet(&mut stream, &handshake(&seed), 0).await?;
@@ -90,6 +89,19 @@ async fn handle_client(mut stream: TcpStream, state: AppState, password: String)
             .await?;
             return Ok(());
         }
+    };
+
+    let password = state.mysql_password.lock().unwrap().clone();
+    let Some(password) = password else {
+        write_error(
+            &mut stream,
+            1045,
+            "28000",
+            "Set a MySQL root password in MySQLite before connecting",
+            2,
+        )
+        .await?;
+        return Ok(());
     };
 
     if capabilities & CLIENT_PROTOCOL_41 == 0
@@ -246,7 +258,12 @@ fn parse_login(packet: &[u8]) -> Option<(u32, String, Vec<u8>, Option<String>)> 
 
     let database = if capabilities & CLIENT_CONNECT_WITH_DB != 0 {
         let end = packet[offset..].iter().position(|byte| *byte == 0)? + offset;
-        Some(String::from_utf8_lossy(&packet[offset..end]).to_string())
+        let database = String::from_utf8_lossy(&packet[offset..end]).to_string();
+        if database.is_empty() {
+            None
+        } else {
+            Some(database)
+        }
     } else {
         None
     };
@@ -703,6 +720,19 @@ mod tests {
         assert_eq!(username, "root");
         assert_eq!(auth, [42]);
         assert_eq!(database.as_deref(), Some("shop"));
+    }
+
+    #[test]
+    fn login_parser_treats_an_empty_initial_database_as_unselected() {
+        let mut packet = vec![0; 32];
+        packet[0..4].copy_from_slice(
+            &(CLIENT_PROTOCOL_41 | CLIENT_SECURE_CONNECTION | CLIENT_CONNECT_WITH_DB).to_le_bytes(),
+        );
+        packet.extend_from_slice(b"root\0");
+        packet.push(0);
+        packet.push(0);
+
+        assert_eq!(parse_login(&packet).unwrap().3, None);
     }
 
     #[test]
