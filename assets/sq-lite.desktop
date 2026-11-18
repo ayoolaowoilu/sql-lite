@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=MySQLite
+Comment=Database Manager
+Exec=sq-lite
+Icon=sq-lite
+Type=Application
+Categories=Development;Database;
+Terminal=false

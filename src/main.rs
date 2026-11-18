@@ -16,6 +16,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 const PORT: u16 = 6141;
+const MYSQL_PORT: u16 = 9995;
+
+mod mysql_server;
 
 #[derive(Clone)]
 struct AppState {
@@ -204,6 +207,29 @@ async fn main() {
         history: Arc::new(Mutex::new(Vec::new())),
         logs: Arc::new(Mutex::new(Vec::new())),
     };
+
+    match std::env::var("MYSQL_PASSWORD") {
+        Ok(password) => {
+            let mysql_state = state.clone();
+            tokio::spawn(async move {
+                let addr = format!("127.0.0.1:{}", MYSQL_PORT);
+                match tokio::net::TcpListener::bind(&addr).await {
+                    Ok(listener) => {
+                        println!("MySQL protocol listener on {} (user: root)", addr);
+                        if let Err(error) =
+                            mysql_server::serve(listener, mysql_state, password).await
+                        {
+                            eprintln!("MySQL listener stopped: {}", error);
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!("Could not start MySQL listener on {}: {}", addr, error)
+                    }
+                }
+            });
+        }
+        Err(_) => eprintln!("MySQL listener disabled; set MYSQL_PASSWORD to enable it."),
+    }
 
     let app = Router::new()
         .route("/api/databases", get(list_databases))

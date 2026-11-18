@@ -12,6 +12,8 @@ serde_json = "1"
 rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"
 tower-http = { version = "0.5", features = ["fs"] }
+sha1 = "0.10"
+rand = "0.8"
 
-[build-dependencies]
+[target.'cfg(windows)'.build-dependencies]
 tauri-winres = "0.1"

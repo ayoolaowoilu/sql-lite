@@ -47,6 +47,43 @@ cargo run --release
 
 The server starts on **port 6141** and automatically opens your default browser.
 
+### Connect with a MySQL client
+
+The app also provides a local MySQL-protocol listener on **127.0.0.1:9995**. Set
+`MYSQL_PASSWORD` before starting the app; the listener accepts the `root` user with
+that password. It remains disabled when the variable is not set.
+
+In PowerShell:
+
+```powershell
+$env:MYSQL_PASSWORD = "choose-a-local-password"
+cargo run
+```
+
+Install `mysql2` in your Node.js project (`npm install mysql2`) and connect with:
+
+```js
+const mysql = require('mysql2/promise');
+
+const connection = await mysql.createConnection({
+  host: '127.0.0.1',
+  port: 9995,
+  user: 'root',
+  password: process.env.MYSQL_PASSWORD,
+  database: 'shop'
+});
+
+const [rows] = await connection.query('SELECT * FROM users');
+console.log(rows);
+await connection.end();
+```
+
+Create the SQLite database first in the app, or issue `CREATE DATABASE shop` and
+`USE shop` over the connection. The listener supports MySQL text-protocol queries
+through `connection.query()`; it is a compatibility bridge to SQLite, not a full
+MySQL server. MySQL-specific SQL features and prepared-statement calls such as
+`connection.execute()` are not supported. The listener binds only to loopback.
+
 ## Usage
 
 ```sql
