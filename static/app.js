@@ -122,17 +122,8 @@ class SQLApp {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not save the MySQL password.');
-      const password = this.mysqlPassword.value;
       this.passwordSetupForm.reset();
-      this.passwordSetup.hidden = true;
-      try {
-        await this.connectProfile(this.localProfile(), password);
-      } catch (error) {
-        this.showConnectionPicker();
-        this.showConnectionPassword(this.localProfile());
-        this.connectionPasswordError.textContent = error.message;
-        this.connectionPasswordError.hidden = false;
-      }
+      this.showConnectionPicker();
     } catch (error) {
       this.showPasswordSetupError(error.message);
     } finally {
